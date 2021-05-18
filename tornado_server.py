@@ -6,6 +6,7 @@ from tornado.gen import Return
 import time
 
 from opc_read import connectUa
+from opc_read import getStructure
 from opc_read import read
 from opc_read import writeX
 from opc_read import writeY
@@ -28,12 +29,20 @@ class BaseHandler(tornado.web.RequestHandler):
 class MainHandler(BaseHandler):
 
     async def post(self):
-        #Request Data
+        # Request Data
         data = json_decode(self.request.body)
 
-        # Ping function
+        # Ping function for Python Backend
         if data['task'] == 'ping':
             self.write('Server returned Status 200; OK')
+        # connect to OPC Server
+        if data['task'] == 'connectUa':
+            uaData = await connectUa(data)
+            self.write(str(uaData))
+        # get OPC Data Structure
+        if data['task'] == 'getStructure':
+            structure = await getStructure(data)
+            self.write(str(structure))
         # opc write
         if data['task'] == 'write_opc_data':
             await writeX(data)
@@ -47,9 +56,7 @@ class MainHandler(BaseHandler):
         if data['task'] == 'subscribe':
             await subscribe(data)
             #self.write(nodeData)
-        if data['task'] == 'connectUa':
-            uaData = await connectUa(data)
-            self.write(str(uaData))
+        
 
 def make_app():
     return tornado.web.Application([

@@ -6,6 +6,7 @@ logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger(__name__)
 
 from IPython import embed
+import uuid
 
 from asyncua import Client, Node, ua
 from asyncua.tools import application_to_strings
@@ -29,7 +30,93 @@ class SubscriptionHandler:
         """
         _logger.info('datachange_notification %r %s', node, val)
 
+# Method to connect with the OPC Server
+async def connectUa(data):
+    client = Client(data['opcUrl'])
+    client.name = "TOTO"
+    client.application_uri = "urn:freeopcua:clientasync"
+    try:
+        async with client:
+            struct = client.get_node(ua.ObjectIds.Server_ServerStatus_CurrentTime)
+            time = await struct.read_value()
+            return time
+    except:
+        return 'failed'
 
+# Method to get the OPC Data Structure
+async def getStructure(data):
+    url = data['opcUrl']
+    async with Client(url=url) as client:
+        nodes = []
+        async def getStruct(pNode):
+            if(await pNode.get_children() != []):
+                for node in await pNode.get_children():
+                    attrs = await node.read_attributes(
+                        [
+                            ua.AttributeIds.DisplayName,
+                            ua.AttributeIds.BrowseName,
+                            ua.AttributeIds.NodeClass,
+                            ua.AttributeIds.WriteMask,
+                            ua.AttributeIds.UserWriteMask,
+                            ua.AttributeIds.DataType,
+                            ua.AttributeIds.Value,
+                        ]
+                    )
+                    name, bname, nclass, mask, umask, dtype, val = [attr.Value.Value for attr in attrs]
+                    if(await node.get_children() != []):
+                        if nclass == ua.NodeClass.Variable:
+                            nodes.append(
+                                {
+                                    "name": bname.to_string()[2:], 
+                                    "DisplayName": name.to_string(), 
+                                    "NodeID": node.nodeid.to_string(),
+                                    "id": str(uuid.uuid4()),
+                                    "dataType": dtype.to_string(), 
+                                    "Value": str(val).replace("'","").replace('"',''), 
+                                    "icon": "variable",
+                                    "children": []
+                                }
+                            )
+                        else:
+                            nodes.append(
+                                {
+                                    "name": bname.to_string()[2:], 
+                                    "DisplayName": name.to_string(), 
+                                    "NodeID": node.nodeid.to_string(),
+                                    "id": str(uuid.uuid4()), 
+                                    "icon": "folder",
+                                    "children": []
+                                }
+                            )
+                    else:
+                        if nclass == ua.NodeClass.Variable:
+                            nodes.append(
+                                {
+                                    "name": bname.to_string()[2:], 
+                                    "DisplayName": name.to_string(), 
+                                    "NodeID": node.nodeid.to_string(),
+                                    "id": str(uuid.uuid4()),
+                                    "dataType": dtype.to_string(), 
+                                    "Value": str(val).replace("'","").replace('"',''), 
+                                    "icon": "variable"
+                                }
+                            )
+                        else:
+                            nodes.append(
+                                {
+                                    "name": bname.to_string()[2:], 
+                                    "DisplayName": name.to_string(), 
+                                    "NodeID": node.nodeid.to_string(),
+                                    "id": str(uuid.uuid4()),
+                                    "icon": "folder"
+                                }
+                            )
+        if(data['nodeID'] == 'root'):
+            await getStruct(client.nodes.root) # start building opc structure tree with root node (childs of root)
+        else:
+            otherNode = client.get_node(data['nodeID'])
+            await getStruct(otherNode)
+        return nodes
 
 async def read(data):
     client = Client(data['opcUrl'])
@@ -93,16 +180,3 @@ async def subscribe(data):
         # await subscription.delete()
         # # exit the Client context manager after one second - this will close the connection.
         # await asyncio.sleep(1)
-
-async def connectUa(data):
-    print(data['url'])
-    client = Client(data['url'])
-    client.name = "TOTO"
-    client.application_uri = "urn:freeopcua:clientasync"
-    try:
-        async with client:
-            struct = client.get_node(ua.ObjectIds.Server_ServerStatus_CurrentTime)
-            time = await struct.read_value()
-            return time
-    except:
-        return 'failed'
