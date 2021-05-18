@@ -19,6 +19,8 @@ import asyncio
 import argparse
 import concurrent.futures
 
+from snippets.objects import ObjectIds
+
 class SubscriptionHandler:
     """
     The SubscriptionHandler is used to handle the data that is received for the subscription.
@@ -63,16 +65,22 @@ async def getStructure(data):
                         ]
                     )
                     name, bname, nclass, mask, umask, dtype, val = [attr.Value.Value for attr in attrs]
+                    # print(str(dtype)[-1])
+                    data_type = ''
+                    for datype, num in ObjectIds.items():
+                        if str(num) == str(dtype)[-1]:
+                            data_type = datype
                     if(await node.get_children() != []):
                         if nclass == ua.NodeClass.Variable:
                             nodes.append(
                                 {
-                                    "name": bname.to_string()[2:], 
+                                    "name": bname.to_string()[2:],
                                     "DisplayName": name.to_string(), 
                                     "NodeID": node.nodeid.to_string(),
+                                    "NodeClass": str(nclass),
                                     "id": str(uuid.uuid4()),
-                                    "dataType": dtype.to_string(), 
-                                    "Value": str(val).replace("'","").replace('"',''), 
+                                    "dataType": str(data_type), 
+                                    "Value": str(val).replace("'","").replace('"',''),
                                     "icon": "variable",
                                     "children": []
                                 }
@@ -80,9 +88,10 @@ async def getStructure(data):
                         else:
                             nodes.append(
                                 {
-                                    "name": bname.to_string()[2:], 
+                                    "name": bname.to_string()[2:],
                                     "DisplayName": name.to_string(), 
                                     "NodeID": node.nodeid.to_string(),
+                                    "NodeClass": str(nclass),
                                     "id": str(uuid.uuid4()), 
                                     "icon": "folder",
                                     "children": []
@@ -92,21 +101,23 @@ async def getStructure(data):
                         if nclass == ua.NodeClass.Variable:
                             nodes.append(
                                 {
-                                    "name": bname.to_string()[2:], 
+                                    "name": bname.to_string()[2:],
                                     "DisplayName": name.to_string(), 
                                     "NodeID": node.nodeid.to_string(),
+                                    "NodeClass": str(nclass),
                                     "id": str(uuid.uuid4()),
-                                    "dataType": dtype.to_string(), 
-                                    "Value": str(val).replace("'","").replace('"',''), 
+                                    "dataType": str(data_type), 
+                                    "Value": str(val).replace("'","").replace('"',''),
                                     "icon": "variable"
                                 }
                             )
                         else:
                             nodes.append(
                                 {
-                                    "name": bname.to_string()[2:], 
+                                    "name": bname.to_string()[2:],
                                     "DisplayName": name.to_string(), 
                                     "NodeID": node.nodeid.to_string(),
+                                    "NodeClass": str(nclass),
                                     "id": str(uuid.uuid4()),
                                     "icon": "folder"
                                 }

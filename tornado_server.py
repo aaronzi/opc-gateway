@@ -5,12 +5,7 @@ from tornado.gen import Return
 
 import time
 
-from opc_read import connectUa
-from opc_read import getStructure
-from opc_read import read
-from opc_read import writeX
-from opc_read import writeY
-from opc_read import subscribe
+from opc_read import *
 
 class BaseHandler(tornado.web.RequestHandler):
 
