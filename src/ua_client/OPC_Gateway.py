@@ -1,3 +1,4 @@
+import asyncio
 import tornado.ioloop
 import tornado.web
 from  tornado.escape import json_decode, json_encode
@@ -7,7 +8,7 @@ import time
 import sys
 sys.path.append('d:\\Main Folders (important)\\Dokumente\\Schule+Uni\\HTW\\Praktikum\\opc-communication\\opc-gateway\\src\\ua_client')
 
-from OPC_Functions import connectUa, getStructure, writeX, writeY, read, subscribe
+from OPC_Functions import connectUa, getStructure, writeX, writeY, read, readSubscribed #, subscribe
 
 class BaseHandler(tornado.web.RequestHandler):
 
@@ -50,9 +51,14 @@ class MainHandler(BaseHandler):
             opc_data = await read(data)
             self.write(str(opc_data))
         # subscribe to OPC Server
-        if data['task'] == 'subscribe':
-            await subscribe(data)
-            #self.write(nodeData)
+        # if data['task'] == 'subscribe':
+        #     await subscribe(data)
+        #     #self.write(nodeData)
+        # read subscribed data
+        if data['task'] == 'readData':
+            subscribedData = await readSubscribed(data)
+            print(subscribedData)
+            self.write(str(subscribedData))
         
 
 def make_app():

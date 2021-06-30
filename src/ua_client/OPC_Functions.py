@@ -19,8 +19,13 @@ import asyncio
 import argparse
 import concurrent.futures
 
+import time
+
+
 sys.path.append('d:\\Main Folders (important)\\Dokumente\\Schule+Uni\\HTW\\Praktikum\\opc-communication\\opc-gateway\\src\\ua_client\\snippets')
 from objects import ObjectIds
+
+changedData = []
 
 class SubscriptionHandler:
     """
@@ -32,6 +37,8 @@ class SubscriptionHandler:
         This method will be called when the Client received a data change message from the Server.
         """
         _logger.info('datachange_notification %r %s', node, val)
+        test = {"NodeID": str(node), "Value": str(val)}
+        changedData.append(test)
 
 # Method to connect with the OPC Server
 async def connectUa(data):
@@ -155,40 +162,50 @@ async def writeY(data):
         struct = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.intYPos")
         await struct.write_value(data['yPos'], ua.VariantType.Int16)
 
-async def subscribe(data):
-    url = data['opcUrl']
-    async with Client(url=url) as client:
-        # get the root Node (this is the url itself acting as root to all sub/child-Nodes)
-        _logger.info("Root node is: %r", client.nodes.root)
-        # get Objects Node (located one beneath the root node; contains all of the opc data in variables)
-        _logger.info("Objects node is: %r", client.nodes.objects)
-        # get child Nodes (includes the Objects Node plus the Types and the View Node)
-        _logger.info("Children of root are: %r", await client.nodes.root.get_children())
+# async def subscribe(data):
+#     url = data['opcUrl']
+#     nodeIDs = data['NodeIDS']
+#     async with Client(url=url) as client:
+#         # nodes that will be listened to
+#         nodes = []
+#         for nodeID in nodeIDs:
+#             nodes.append(client.get_node(nodeID))
+#         # handler for data subscription
+#         handler = SubscriptionHandler()
+#         # create a Client Subscription. Update rate in ms
+#         subscription = await client.create_subscription(100, handler)
+#         # subscribe to data changes for nodes (variables).
+#         await subscription.subscribe_data_change(nodes)
+#         # subscription time in seconds
+#         x = 28.90
+#         await asyncio.sleep(x)
+#         # delete the subscription (this un-subscribes from the data changes of the variables).
+#         # This is optional since closing the connection will also delete all subscriptions.
+#         await subscription.delete()
+#         client.disconnect()
 
-        # return 'Root Node: ' + str(client.nodes.root) + '; Objects Node: ' + str(client.nodes.objects) + '; Child Nodes: ' + str(await client.nodes.root.get_children())
+async def readSubscribed(data):
+    oldVals = data['oldVals']
+    oldData = []
+    for val in oldVals:
+        dataOld = {'NodeID': val['NodeID'], 'Value': val['Value']}
+        oldData.append(dataOld)
+    client = Client(data['opcUrl'])
 
-        myvar = client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.stringStatus")
-        # myvar = await client.nodes.objects.get_child(["Server", "2:CODESYS Control Win V3 x64", "2:Resources", "2:Application", "2:GlobalVars", "2:GVL", "2:stringStatus"])
-        _logger.info("myvar is: %r", myvar)
-        
-        
-        _logger.info("Children of objects Node are: %r", await client.get_node("ns=4;s=|var|CODESYS Control Win V3 x64.Application.GVL.stringStatus").get_children())
+    client.name = "TOTO"
+    client.application_uri = "urn:freeopcua:clientasync"
 
-        # handler = SubscriptionHandler()
-        # # create a Client Subscription.
-        # subscription = await client.create_subscription(1000, handler)
-        # # nodes that will be listened to
-        # nodes = [
-        #     myvar,
-        #     client.get_node(ua.ObjectIds.Server_ServerStatus_CurrentTime),
-        # ]
-        # # subscribe to data changes for nodes (variables).
-        # await subscription.subscribe_data_change(nodes)
-        # # subscription runs for x seconds
-        # x = 1000
-        # await asyncio.sleep(x)
-        # # delete the subscription (this un-subscribes from the data changes of the variables).
-        # # This is optional since closing the connection will also delete all subscriptions.
-        # await subscription.delete()
-        # # exit the Client context manager after one second - this will close the connection.
-        # await asyncio.sleep(1)
+    async with client:
+        for i in range(290):
+            returnVal = []
+            for nodeID in oldData:
+                struct = client.get_node(nodeID['NodeID'])
+                readVal = await struct.read_value()
+                data = {'NodeID': nodeID['NodeID'], 'Value': str(readVal)}
+                returnVal.append(data)
+            for i in returnVal:
+                if i not in oldData:
+                    return returnVal
+            asyncio.sleep(0.1)
+        return
+    
