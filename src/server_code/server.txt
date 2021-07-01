@@ -1,0 +1,46 @@
+PLC_PRG:
+
+    PROGRAM PLC_PRG
+    VAR
+        initialize : BOOL := TRUE;
+        axisVelo : INT;
+    END_VAR
+
+    IF initialize = TRUE THEN
+        dashboard_data.ProcessName := "Demo Process";
+        dashboard_data.NumberOfSubunits := 8;
+        dashboard_data.ActiveState := TRUE;
+        dashboard_data.ConnectionState := TRUE;
+        
+        dashboard_data.GraphData[1] := 1;
+        dashboard_data.GraphData[2] := 3;
+        dashboard_data.GraphData[3] := 2;
+        dashboard_data.GraphData[4] := 7;
+        dashboard_data.GraphData[5] := 6;
+        dashboard_data.GraphData[6] := 6;
+        dashboard_data.GraphData[7] := 2;
+        dashboard_data.GraphData[8] := 4;
+        dashboard_data.GraphData[9] := 3;
+        dashboard_data.GraphData[10] := 1;
+
+        dashboard_data.AxisVelo := 5;
+        dashboard_data.SubUnitState := "Execute";
+        dashboard_data.AverageSpeed := 2;
+        
+        initialize := FALSE;
+    END_IF
+    dashboard_data.AxisVelo := axisVelo;
+
+global dashboard_data:
+    VAR_GLOBAL
+        ProcessName : WSTRING;
+        NumberOfSubunits: INT;
+        ActiveState: BOOL;
+        ConnectionState: BOOL;
+        
+        GraphData : ARRAY[0..10] OF INT;
+
+        AxisVelo : INT;
+        SubUnitState : WSTRING;
+        AverageSpeed : INT;
+    END_VAR
