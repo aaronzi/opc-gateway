@@ -6,7 +6,7 @@ from tornado.gen import Return
 
 import time
 import sys
-sys.path.append('d:\\Main Folders (important)\\Dokumente\\Schule+Uni\\HTW\\Praktikum\\opc-communication\\opc-gateway\\src\\ua_client')
+#sys.path.append('..\\ua_client')
 
 from OPC_Functions import connectUa, getStructure, writeX, writeY, read, readSubscribed #, subscribe
 

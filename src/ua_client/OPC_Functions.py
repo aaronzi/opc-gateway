@@ -22,8 +22,8 @@ import concurrent.futures
 import time
 
 
-sys.path.append('d:\\Main Folders (important)\\Dokumente\\Schule+Uni\\HTW\\Praktikum\\opc-communication\\opc-gateway\\src\\ua_client\\snippets')
-from objects import ObjectIds
+#sys.path.append('.\\snippets')
+from snippets.objects import ObjectIds
 
 changedData = []
 
